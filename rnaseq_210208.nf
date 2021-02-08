@@ -44,11 +44,11 @@ process QC {
     set sample_id, file(reads) from read_pairs_qc_ch
 
     output:
-    file("FastQC_report") into fastqc_ch
-
+    file("fastqc_out/*.zip") into fastqc_ch
     """
-    mkdir FastQC_report
-    fastqc -f fastq -q ${reads} -o FastQC_report
+    mkdir -p fastqc_out
+
+    fastqc ${reads} -o fastqc_out
     """  
 }
 
@@ -83,11 +83,14 @@ process tophat2 {
     tuple val(pair_id), path(reads) from read_pairs_ch
  
     output:
-    set pair_id, "accepted_hits.bam" into tophat2_ch
+    set pair_id, "tophat_out/*/*align_summary.txt" into tophat2_ch
  
     """
+    mkdir -p tophat_out
+    mkdir -p tophat_out/${pair_id}
     tophat2 -p ${task.cpus} genome.index $reads
-    mv tophat_out/accepted_hits.bam .
+    mv tophat_out/align_summary.txt tophat_out/${pair_id}/${pair_id}"_align_summary.txt"
+
     """
 }
  
@@ -109,12 +112,11 @@ process MultiQC {
     """  
 }
 
-
 /*
  * Completion event
  */
 
 workflow.onComplete { 
-    log.info ( workflow.success ? "<MSG> Finished processing pipeline. Check \"Results\" folder for output." : "<MSG> Did not finishing running pipeline." )
+    log.info ( workflow.success ? "<MSG> Finished processing pipeline. Check \"results\" for output." : "<MSG> Did not finishing running pipeline." )
 }
 
