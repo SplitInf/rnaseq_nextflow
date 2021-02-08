@@ -116,7 +116,19 @@ process MultiQC {
  * Completion event
  */
 
-workflow.onComplete { 
-    log.info ( workflow.success ? "<MSG> Finished processing pipeline. Check \"results\" for output." : "<MSG> Did not finishing running pipeline." )
+workflow.onComplete {
+
+    println ( workflow.success ? """
+        Pipeline execution summary
+        ---------------------------
+        Completed at: ${workflow.complete}
+        Duration    : ${workflow.duration}
+        Success     : ${workflow.success}
+        exit status : ${workflow.exitStatus}
+        """ : """
+        Failed: ${workflow.errorReport}
+        exit status : ${workflow.exitStatus}
+        """
+    )
 }
 
