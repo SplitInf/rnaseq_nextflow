@@ -4,12 +4,13 @@
  * Usage: nextflow run < your script > --genome [path to genome] --reads [path to reads] -with- docker [docker
 image]
  */ 
- 
 
 params.reads = ""
 params.genome = ""
 params.outdir = 'results'
 
+def genome = new File(params.genome)
+if( !genome.exists() ) exit 1, "<MSG> Please provide path to genome using '--genome' flag"
 
 println "<MSG> running pipeline ... "
 
@@ -23,8 +24,7 @@ log.info """\
          .stripIndent()
  
 /*
- * Create read pair channel that contain:
- * the pair ID, the read1 [0] and read2 [1]
+ * Create read pair channel that contain the pair ID, the read1 [0] and read2 [1]
  */
 
 Channel
@@ -47,7 +47,6 @@ process QC {
     file("fastqc_out/*.zip") into fastqc_ch
     """
     mkdir -p fastqc_out
-
     fastqc ${reads} -o fastqc_out
     """  
 }
@@ -90,7 +89,6 @@ process tophat2 {
     mkdir -p tophat_out/${pair_id}
     tophat2 -p ${task.cpus} genome.index $reads
     mv tophat_out/align_summary.txt tophat_out/${pair_id}/${pair_id}"_align_summary.txt"
-
     """
 }
  
@@ -116,19 +114,6 @@ process MultiQC {
  * Completion event
  */
 
-workflow.onComplete {
-
-    println ( workflow.success ? """
-        Pipeline execution summary
-        ---------------------------
-        Completed at: ${workflow.complete}
-        Duration    : ${workflow.duration}
-        Success     : ${workflow.success}
-        exit status : ${workflow.exitStatus}
-        """ : """
-        Failed: ${workflow.errorReport}
-        exit status : ${workflow.exitStatus}
-        """
-    )
+workflow.onComplete { 
+    log.info ( workflow.success ? "<MSG> Finished processing pipeline. Check \"results\" for output." : "<MSG> Did not finishing running pipeline." )
 }
-
